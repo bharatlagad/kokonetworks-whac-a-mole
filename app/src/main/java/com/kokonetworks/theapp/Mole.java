@@ -26,6 +26,7 @@ class Mole {
         startTimeForLevel = System.currentTimeMillis();
 
         future = scheduledExecutorService.scheduleAtFixedRate(() -> {
+//            field.checkClick();
             field.setActive(nextHole());
 
             if(System.currentTimeMillis()-startTimeForLevel >= LEVEL_DURATION_MS && getCurrentLevel() < LEVELS.length){

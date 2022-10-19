@@ -7,6 +7,7 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
@@ -19,6 +20,8 @@ class Field extends LinearLayout {
 
     private int score;
     private Mole mole;
+    private boolean isGameEnd = false;
+    private boolean isClicked = false;
 
     private final int ACTIVE_TAG_KEY = 873374234;
 
@@ -67,6 +70,7 @@ class Field extends LinearLayout {
     }
 
     public void startGame() {
+        isGameEnd = false;
         resetScore();
         resetCircles();
         for (SquareButton squareButton : circles) {
@@ -74,11 +78,20 @@ class Field extends LinearLayout {
                 @Override
                 public void onClick(View view) {
                     boolean active = (boolean) view.getTag(ACTIVE_TAG_KEY);
-                    if (active) {
-                        score += mole.getCurrentLevel() * 2;
+                    isClicked = true;
+                    if (!isGameEnd) {
+                        if (active) {
+                            score += mole.getCurrentLevel() * 2;
+                            listener.onUpdateScore(score);
+                        } else {
+                            isGameEnd = true;
+                            mole.stopHopping();
+                            listener.onGameEnded(score);
+                            squareButton.setBackground(ContextCompat.getDrawable(getContext(), R.drawable.orange_oval));
+                            circles[getCurrentCircle()].setBackground(ContextCompat.getDrawable(getContext(), R.drawable.red_oval));
+                        }
                     } else {
-                        mole.stopHopping();
-                        listener.onGameEnded(score);
+                        Toast.makeText(getContext(), "Restart the game", Toast.LENGTH_LONG).show();
                     }
                 }
             });
@@ -99,9 +112,18 @@ class Field extends LinearLayout {
         }
     }
 
+    public void checkClick() {
+        mainHandler.post(() -> {
+            if (!isClicked) {
+                listener.onGameEnded(score);
+            }
+        });
+    }
+
     public void setActive(int index) {
         mainHandler.post(() -> {
             resetCircles();
+            isClicked = false;
             circles[index].setBackground(ContextCompat.getDrawable(getContext(), R.drawable.hole_active));
             circles[index].setTag(ACTIVE_TAG_KEY, true);
             currentCircle = index;
@@ -118,6 +140,8 @@ class Field extends LinearLayout {
 
     public interface Listener {
         void onGameEnded(int score);
+
+        void onUpdateScore(int score);
 
         void onLevelChange(int level);
     }
